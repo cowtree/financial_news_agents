@@ -7,10 +7,11 @@ async def main():
     # Load environment variables
     load_dotenv()
     
-    # Check for OpenAI API key
-    if not os.getenv('OPENAI_API_KEY'):
-        print("Error: OPENAI_API_KEY not found in environment variables")
-        return
+    # Check for the local oMLX settings
+    for name in ('OMLX_API_KEY', 'OMLX_MODEL'):
+        if not os.getenv(name):
+            print(f"Error: {name} not found in environment variables")
+            return
     
     # Create and run the orchestrator
     orchestrator = OrchestratorAgent()

@@ -1,5 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 from typing import Dict, Any, List
 from .base_agent import BaseAgent
 import logging
@@ -10,9 +10,10 @@ class NewsFetcherAgent(BaseAgent):
     def __init__(self):
         super().__init__("NewsFetcher")
         self.sources = [
-            "https://www.reuters.com/markets/",
-            "https://www.bloomberg.com/markets",
-            "https://www.ft.com/markets"
+            # RSS feeds are meant for programs to read; the sites' HTML pages block scrapers
+            "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+            "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+            "https://finance.yahoo.com/news/rssindex"
         ]
         # Configure logging
         logging.basicConfig(level=logging.INFO)
@@ -32,7 +33,7 @@ class NewsFetcherAgent(BaseAgent):
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'application/rss+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Connection': 'keep-alive',
         }
@@ -44,22 +45,16 @@ class NewsFetcherAgent(BaseAgent):
                 response.raise_for_status()  # Raise an exception for bad status codes
                 
                 self.logger.info(f"Successfully fetched content from {source}")
-                soup = BeautifulSoup(response.text, 'html.parser')
+                root = ET.fromstring(response.content)
                 
-                # Try different selectors for different news sites
-                articles = []
-                if 'reuters.com' in source:
-                    articles = soup.select('article h3')[:5]
-                elif 'bloomberg.com' in source:
-                    articles = soup.select('.headline__text')[:5]
-                elif 'ft.com' in source:
-                    articles = soup.select('.js-teaser-heading-link')[:5]
+                # Every RSS feed lists its articles as <item> elements
+                articles = root.findall('./channel/item')[:5]
                 
                 self.logger.info(f"Found {len(articles)} articles from {source}")
                 
                 for article in articles:
-                    title = article.get_text().strip()
-                    url = article.find_parent('a')['href'] if article.find_parent('a') else None
+                    title = (article.findtext('title') or '').strip()
+                    url = (article.findtext('link') or '').strip() or None
                     
                     if title:
                         news_items.append({

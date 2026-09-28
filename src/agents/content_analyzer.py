@@ -1,19 +1,19 @@
-import openai
 from typing import Dict, Any
 from .base_agent import BaseAgent
+from .llm import LocalLLM
 import logging
 
 class ContentAnalyzerAgent(BaseAgent):
     """Agent responsible for analyzing and summarizing news content."""
     
-    def __init__(self, api_key: str):
+    def __init__(self, llm: LocalLLM):
         super().__init__("ContentAnalyzer")
-        openai.api_key = api_key
+        self.llm = llm
         self.logger = logging.getLogger(__name__)
     
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Analyze and summarize news content using OpenAI's API.
+        Analyze and summarize news content using a local open-source model.
         
         Args:
             input_data: Dictionary containing news items to analyze
@@ -37,16 +37,8 @@ class ContentAnalyzerAgent(BaseAgent):
                 3. Potential market impact
                 """
                 
-                # Call OpenAI API for analysis
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a financial news analyst."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-                
-                analysis = response.choices[0].message['content']
+                # Call the local model for analysis
+                analysis = self.llm.chat("You are a financial news analyst.", prompt)
                 
                 analyzed_items.append({
                     'original_title': item['title'],

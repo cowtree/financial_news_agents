@@ -2,9 +2,12 @@
 
 An agentic AI system that aggregates and summarizes relevant financial news.
 
+Runs entirely on an open-source model (e.g. Qwen) served locally by oMLX
+through its OpenAI-compatible API. No paid API key needed.
+
 ## Features
 
-- Fetches financial news from multiple sources
+- Fetches financial news from public RSS feeds (CNBC, MarketWatch, Yahoo Finance)
 - Analyzes and summarizes content
 - Scores news relevance
 - Formats output into concise bullet points
@@ -22,10 +25,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file with your OpenAI API key:
+3. Start a local oMLX server, then create a `.env` file:
 ```
-OPENAI_API_KEY=your_api_key_here
+OMLX_API_KEY=your-omlx-api-key
+OMLX_MODEL=Qwen3.6-35B-A3B-MLX-8bit
+OMLX_THINKING=false
 ```
+`OMLX_BASE_URL` is optional and defaults to `http://localhost:8000/v1`.
+Any OpenAI-compatible local server (oMLX, Ollama, vLLM, LM Studio) works.
 
 ## Usage
 

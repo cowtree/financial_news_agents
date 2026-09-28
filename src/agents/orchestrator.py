@@ -1,10 +1,10 @@
-import os
 from typing import Dict, Any
 from .base_agent import BaseAgent
 from .news_fetcher import NewsFetcherAgent
 from .content_analyzer import ContentAnalyzerAgent
 from .relevance_scorer import RelevanceScorerAgent
 from .formatter import FormatterAgent
+from .llm import LocalLLM
 
 class OrchestratorAgent(BaseAgent):
     """Agent responsible for orchestrating the workflow between all other agents."""
@@ -12,8 +12,9 @@ class OrchestratorAgent(BaseAgent):
     def __init__(self):
         super().__init__("Orchestrator")
         self.news_fetcher = NewsFetcherAgent()
-        self.content_analyzer = ContentAnalyzerAgent(os.getenv('OPENAI_API_KEY'))
-        self.relevance_scorer = RelevanceScorerAgent(os.getenv('OPENAI_API_KEY'))
+        llm = LocalLLM()
+        self.content_analyzer = ContentAnalyzerAgent(llm)
+        self.relevance_scorer = RelevanceScorerAgent(llm)
         self.formatter = FormatterAgent()
     
     async def execute(self, input_data: Dict[str, Any] = None) -> Dict[str, Any]:

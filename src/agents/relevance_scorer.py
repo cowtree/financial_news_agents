@@ -1,14 +1,15 @@
-import openai
 from typing import Dict, Any
 from .base_agent import BaseAgent
+from .llm import LocalLLM
 import logging
+import re
 
 class RelevanceScorerAgent(BaseAgent):
     """Agent responsible for scoring the relevance of news items."""
     
-    def __init__(self, api_key: str):
+    def __init__(self, llm: LocalLLM):
         super().__init__("RelevanceScorer")
-        openai.api_key = api_key
+        self.llm = llm
         self.logger = logging.getLogger(__name__)
     
     async def execute(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -39,26 +40,18 @@ class RelevanceScorerAgent(BaseAgent):
                 3. Global significance
                 4. Industry relevance
                 
-                Provide a score and brief justification.
+                Start your answer with the score on its own line (e.g. "Score: 8"),
+                then give a brief justification.
                 """
                 
-                # Call OpenAI API for scoring
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a financial news relevance scorer."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
+                # Call the local model for scoring
+                score_analysis = self.llm.chat("You are a financial news relevance scorer.", prompt)
                 
-                score_analysis = response.choices[0].message['content']
-                
-                # Extract numerical score (assuming it's in the first line)
+                # Extract the numerical score from the first line
                 score = 5  # default score
-                try:
-                    score = int(score_analysis.split('\n')[0].strip())
-                except:
-                    pass
+                match = re.search(r'\b(10|[1-9])\b', score_analysis.strip().split('\n')[0])
+                if match:
+                    score = int(match.group(1))
                 
                 scored_items.append({
                     **item,
